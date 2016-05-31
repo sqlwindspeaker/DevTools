@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# 初始化project: 填写.project/PROJECT.conf
+# 加载project: 初始化工作环境，
+# 列出project
+# 删除projec
+
