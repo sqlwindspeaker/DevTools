@@ -6,12 +6,11 @@
  * Time: 17:35
  */
 
-require_once __DIR__ . "../lib/SVNInfo.php";
-
 ## 1. 显示当前分支
 
 /**
  * @param $args
+ * @return int
  */
 function svn_status($args)
 {
@@ -28,5 +27,7 @@ function svn_status($args)
     print_r($prompt . "\n\n");
 
     system("svn st");
+
+    return Error::E_SUCCESS;
 }
 

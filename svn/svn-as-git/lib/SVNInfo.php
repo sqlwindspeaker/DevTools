@@ -8,6 +8,8 @@
 
 final class SVNInfo
 {
+    const PROJECT_NAME  = "web";
+
     /**
      * @return string Current Url
      */
@@ -18,6 +20,11 @@ final class SVNInfo
         return trim(ob_get_clean());
     }
 
+    public static function getRootUrl()
+    {
+        return preg_replace('/(branches|trunk)[\w_:\/.]+$/', "", self::getCurrentUrl());
+    }
+
 
     /**
      * @param bool $includeTrunk
@@ -26,9 +33,9 @@ final class SVNInfo
     public static function getBranchList($includeTrunk = false)
     {
         $rootUrl = preg_replace('/\/(branches|trunk)[\w_:\/.]+$/', "", self::getCurrentUrl());
-        $branchBaseUrl = $rootUrl . "branches/lib";
+        $branchBaseUrl = $rootUrl . "/branches/" . self::PROJECT_NAME;
         ob_start();
-        system('svn ls ' . $branchBaseUrl);
+        system('svn ls ' . $branchBaseUrl . ' | sed -n \'s/\/$//p\'');
         $branchList = explode("\n", trim(ob_get_clean()));
         if (!$includeTrunk) { return $branchList; }
         else {
@@ -46,10 +53,23 @@ final class SVNInfo
     {
         $rootUrl = preg_replace('/\/(branches|trunk)[\w_:\/.]+$/', "", self::getCurrentUrl());
         if ($branchName == "trunk") {
-            return $rootUrl . "/trunk/lib";
+            return $rootUrl . "/trunk/" . self::PROJECT_NAME;
         } else {
-            return $rootUrl . "/branches/lib/" . $branchName;
+            return $rootUrl . "/branches/" . self::PROJECT_NAME . "/" . $branchName;
         }
     }
 
+
+    /**
+     * @return string
+     */
+    public static function getCurrentBranchName()
+    {
+        $url = self::getCurrentUrl();
+        if (strpos($url, "trunk") !== false) { return "trunk"; }
+        else {
+            $idx = strrpos($url, "/");
+            return substr($url, $idx + 1);
+        }
+    }
 }

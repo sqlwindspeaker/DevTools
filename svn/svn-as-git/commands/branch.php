@@ -9,76 +9,73 @@
 ## 2. 删除分支
 ## 3. 显示分支列表
 
-require_once __DIR__ . "../lib/SVNInfo.php";
-
 /**
  * @param $args
+ * @return int
  */
 function svn_branch($args)
 {
-    $currentUrl = SVNInfo::getCurrentUrl();
-
+    $argsCount = count($args);
+    if ($argsCount == 0) { return show_branch_list(); }
+    else if (($idx = array_search("-d", $args)) !== false) {
+        if (!isset($args[$idx + 1])) { return -1; }
+        $branch = $args[$idx + 1];
+        return remove_branch($branch);
+    } else { // create branch
+        $new = $args[0];
+        $base = isset($args[1]) ? $args[1] : "";
+        return create_branch($new, $base);
+    }
 }
 
-
-// 列出所有分支
-// 1. 获取当前分支
-//$currentUrl = "svn://10.21.200.52/yuangongbao_YJ001/Source/branches/lib/20160511_chaojijifen_dev";
-$currentUrl = "svn://10.21.200.52/yuangongbao_YJ001/Source/trunk/lib/20160511_chaojijifen_dev";
-$rootUrl = preg_replace('/(branches|trunk)[\w_:\/.]+$/', "", $currentUrl);
-
-$branchBaseUrl = $rootUrl . "branches" . DIRECTORY_SEPARATOR . "lib" . DIRECTORY_SEPARATOR;
-print_r($branchBaseUrl . "\n");
-
-// 2. 显示分支列表
-system("svn ls " . $branchBaseUrl);
-
-
-
+function show_branch_list()
+{
+    $branchList = SVNInfo::getBranchList();
+    print_r($branchList);
+    return Error::E_SUCCESS;
+}
 
 // 创建新分支: svn branch branchName baseBranchName
+function create_branch($new, $base = "")
+{
+    $branchArray = SVNInfo::getBranchList();
+    $rootUrl = SVNInfo::getRootUrl();
 
-$branchName = "";
-$baseBranchName  = "";
-ob_start();
-system('svn ls ' . $branchBaseUrl);
-$branchArray = explode("\n", trim(ob_get_clean()));
+    if ($base == "") { $base = SVNInfo::getCurrentBranchName(); }
 
-if ($baseBranchName == "trunk") {
-    $baseBranchUrl = $rootUrl . $baseBranchName . DIRECTORY_SEPARATOR . "lib";
-} else if (in_array($branchName, $branchArray)) {
-    // Error 分支已存在
-} else if (!in_array($baseBranchName, $branchArray)) {
-    // Error 基于的分支不存在
-} else {
-
-    $baseBranchUrl = $rootUrl . "branches" . DIRECTORY_SEPARATOR . "lib" . DIRECTORY_SEPARATOR . $baseBranchName;
-    $newBranchUrl = $rootUrl . "branches" . DIRECTORY_SEPARATOR . "lib" . DIRECTORY_SEPARATOR . $branchName;
-    ob_start();
-    system("svn cp " . $baseBranchUrl . " " . $newBranchUrl, $retval);
-    $errMsg = ob_get_clean();
-    if ($retval === 0 && $errMsg === "") {
-        // 成功
+    if ($base == "trunk") {
+        $baseBranchUrl = $rootUrl . $base . DIRECTORY_SEPARATOR . SVNInfo::PROJECT_NAME;
     } else {
-        // 错误
+        if (in_array($new, $branchArray)) {
+            Utils::println("Error: branch {$new} already exists");
+            return Error::E_PARAM;
+        } else if (!in_array($base, $branchArray)) {
+            Utils::println("Error: branch {$base} not exists");
+            return Error::E_PARAM;
+        }
+        $baseBranchUrl = $rootUrl . "branches" . DIRECTORY_SEPARATOR . SVNInfo::PROJECT_NAME . DIRECTORY_SEPARATOR . $base;
     }
+
+    $newBranchUrl = $rootUrl . "branches" . DIRECTORY_SEPARATOR . SVNInfo::PROJECT_NAME . DIRECTORY_SEPARATOR . $new;
+
+    $command = "svn cp " . $baseBranchUrl . " " . $newBranchUrl . " -m ''";
+    Utils::exec($command);
 }
 
 
 // 删除分支
-
-if ($branchName == "trunk") {
-    // error 不能删除分支
-} else if (!in_array($branchName, $branchArray)) {
-    // Error 要删除的分支不存在
-} else {
-    $deletedBranchUrl = SVNInfo::buildBranchUrl($branchName);
-    ob_start();
-    system("svn rm " . $deletedBranchUrl, $retval);
-    $errMsg = ob_get_clean();
-    if ($retval === 0 && $errMsg === "") {
-        // 成功
+function remove_branch($branch)
+{
+    $branchArray = SVNInfo::getBranchList();
+    if ($branch == "trunk") {
+        Utils::println("Error: trunk cannot be removed");
+        return Error::E_PARAM;
+    } else if (!in_array($branch, $branchArray)) {
+        Utils::println("Error: branch {$branch} does not exist");
+        return Error::E_PARAM;
     } else {
-        // 错误
+        $command = "svn rm " . SVNInfo::buildBranchUrl($branch) . " -m ''";
+        Utils::exec($command);
     }
 }
+

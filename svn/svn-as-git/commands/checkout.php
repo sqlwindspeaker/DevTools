@@ -10,39 +10,59 @@
 
 /**
  * @param $args
+ * @return int
  */
 function svn_checkout($args)
 {
-    $arg = "";
+    if (count($args) == 0) { $param = "./"; }
+    else { $param = $args[0]; }
 
     // 1. 判断是不是路径:
-    if (!preg_match($arg, '/(\/|\.)/')) { // not contains '/' and '.', regards as branch name
-        _checkout_to_branch($arg);
+    if (strpos($param, "/") === false && strpos($param, ".") === false) { // not contains '/' and '.', regards as branch name
+        return _checkout_to_branch($param);
     } else { // regards as file
-        $path = "./" . $arg;
-        if (is_dir($path)) {
-            system("/usr/bin/svn revert -R " . $path);
+        if (strpos($param, "./") !== 0) {  // not starts with ./
+            $path = "./" . $param;
         } else {
-            system("/usr/bin/svn revert " . $path);
+            $path = $param;
         }
+        return _checkout_files($path);
     }
 }
 
 
 function _checkout_to_branch($branchName)
 {
+    if ($branchName != "trunk") {
+        $branchList = SVNInfo::getBranchList();
+        if (!in_array($branchName, $branchList)) {
+            Utils::println("Error: branch {$branchName} not exists");
+            return Error::E_PARAM;
+        }
+    }
+
     ob_start();
     system("/usr/bin/svn status");
     $result = ob_get_clean();
 
-    if (!$result) { // 工作目录干净, 可以切分支
-        $branchUrl = SVNInfo::buildBranchUrl($branchName);
-        system("/usr/bin/svn switch " . $branchUrl);
+    if ($result == "") { // 工作目录干净, 可以切分支
+        $command = "/usr/bin/svn switch " . SVNInfo::buildBranchUrl($branchName);
+        return Utils::exec($command);
+    } else {
+        Utils::println("working dir not clean, switch branch failed");
+        Utils::println("svn outputs: \n");
+        Utils::println($result, false);
+
+        return Error::E_SUCCESS;
     }
 }
 
-
-
-function _checkout_files($path, $revision)
-{}
+function _checkout_files($path, $revision = "")
+{
+    if (is_dir($path)) {
+        return Utils::exec("/usr/bin/svn revert -R " . $path);
+    } else {
+        return Utils::exec("/usr/bin/svn revert " . $path);
+    }
+}
 
