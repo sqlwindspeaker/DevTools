@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# git log 工具
+# git log --graph
+# git log --oneline
+
+# git 统计工具
+
+# git hook 工具
