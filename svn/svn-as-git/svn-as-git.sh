@@ -17,7 +17,7 @@ function svn()
             ARGS=${ARGS}--verbose;
             /usr/bin/svn log ${ARGS} | more
         else
-            /usr/bin/svn log ${ARGS} | more
+            /usr/bin/svn "$@" | more
         fi
     elif [ $# -gt 0 ] && [ $1 = 'diff' ]; then ## svn diff
         /usr/bin/svn diff
