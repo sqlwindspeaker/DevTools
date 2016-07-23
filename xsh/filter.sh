@@ -1,14 +1,21 @@
 #!/usr/bin/env bash
 
-unset -f trim
 
 function trim()
 {
-
-
+    ""
 }
 
-readonly -f trim
+to_upper()
+{
+    echo $1 | tr 'a-z' 'A-Z'
+}
+
+to_lower()
+{
+    echo $1 | tr 'A-Z' 'a-z'
+}
+
 
 ## 删除空行
 ## 删除多余空格: sed 's/^[ \t]*//;s/[ \t]*$//'
