@@ -8,7 +8,7 @@
 
 final class SVNInfo
 {
-    const PROJECT_NAME  = "web";
+    const PROJECT_NAME  = "lib";
 
     /**
      * @return string Current Url
